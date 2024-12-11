@@ -32,6 +32,66 @@ app.use((req, res, next) => {
   next();
 });
 
+
+app.post("/register_reader", async (req, res) => {
+  try {
+    const { registration_code, label, location } = req.body;
+
+    if (!registration_code) {
+      return res.status(400).json({ error: "El código de registro es obligatorio." });
+    }
+
+    let locationId = location;
+
+    // Si no se proporciona una ubicación, crea una predeterminada
+    if (!locationId) {
+      const newLocation = await stripe.terminal.locations.create({
+        display_name: "Ubicación Predeterminada",
+        address: {
+          line1: "123 Calle Principal",
+          city: "Ciudad",
+          state: "Estado",
+          country: "MX",
+          postal_code: "12345",
+        },
+      });
+      locationId = newLocation.id;
+    }
+
+    // Crear el lector con la ubicación especificada
+    const reader = await stripe.terminal.readers.create({
+      registration_code,
+      label: label || "Default Reader",
+      location: "tml_F06gagVm1WuNw6",
+    });
+
+    logger.info(`Reader registered successfully with ID: ${reader.id}`);
+    res.json(reader);
+  } catch (error) {
+    logger.error("Error registrando el terminal: " + error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Endpoint para listar todas las ubicaciones de terminal
+app.get("/list_locations", async (req, res) => {
+  try {
+    const locations = await stripe.terminal.locations.list({
+      limit: 100,
+    });
+
+    logger.info(`Retrieved ${locations.data.length} locations.`);
+    res.json(locations.data);
+  } catch (error) {
+    logger.error("Error retrieving locations: " + error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+
 // Crear un token de conexión para el terminal
 app.post("/connection_token", async (req, res) => {
   try {

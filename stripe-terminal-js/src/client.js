@@ -21,7 +21,7 @@ class Client {
     const formData = new URLSearchParams();
     formData.append("label", label);
     formData.append("registration_code", registrationCode);
-    formData.append("location", location);
+    formData.append("location", "tml_F06gagVm1WuNw6");
     return this.doPost(this.url + "/register_reader", formData);
   }
 
