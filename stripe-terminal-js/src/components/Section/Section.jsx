@@ -8,21 +8,19 @@ const commonCSS = {
   boxShadow: "0 3px 6px 0 rgba(0,0,0,0.07)",
   flexShrink: 0,
   padding: "16px",
-  [breakpoints.laptop]: {
-    width: "310px"
-  },
   [breakpoints.mobile]: {
-    width: "100%"
+    width: "100%",
   },
   borderBottom: "1px solid #e3e8ee",
   display: "block",
   alignItems: "center",
-  justifyContent: "space-between"
+  justifyContent: "space-between",
 };
 
 class Section extends React.Component {
   render() {
-    const { alignment, children, position } = this.props;
+    const { alignment, children, position, laptopWidth } = this.props;
+
     let borderRadius;
     switch (position) {
       case "first":
@@ -42,8 +40,11 @@ class Section extends React.Component {
       <div
         className={css({
           ...commonCSS,
+          [breakpoints.laptop]: {
+            width: laptopWidth || "310px",
+          },
           borderRadius,
-          ...alignment
+          ...alignment,
         })}
       >
         {children}

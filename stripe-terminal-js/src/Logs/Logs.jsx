@@ -15,20 +15,20 @@ class Logs extends React.Component {
     super(props);
 
     this.state = {
-      logs: []
+      logs: [],
     };
     Logger.setCollectors([this]);
   }
 
   collect(log) {
-    this.setState(state => ({
-      logs: [log, ...state.logs]
+    this.setState((state) => ({
+      logs: [log, ...state.logs],
     }));
   }
 
   clearLogs = () => {
     this.setState({
-      logs: []
+      logs: [],
     });
   };
 
@@ -38,7 +38,11 @@ class Logs extends React.Component {
         <Group
           direction="column"
           spacing={8}
-          alignment={{ alignItems: "center", textAlign: "center" }}
+          alignment={{
+            alignItems: "center",
+            textAlign: "center",
+            justifyContent: "center",
+          }}
         >
           <Text size={14}>Welcome to the Stripe Terminal reference app</Text>
           <Text size={12} color="lightGrey">
@@ -73,7 +77,7 @@ class Logs extends React.Component {
     return (
       <div className="Logs-content">
         <TransitionGroup className="todo-list">
-          {logs.map(log => {
+          {logs.map((log) => {
             const returnType = log.response
               ? "RESPONSE"
               : log.exception

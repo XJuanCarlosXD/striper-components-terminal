@@ -6,7 +6,7 @@ import { breakpoints } from "../../styles.jsx";
 import { css } from "emotion";
 
 class Group extends React.Component {
-  getMarginType = direction => {
+  getMarginType = (direction) => {
     if (direction === "column") {
       return "marginTop";
     }
@@ -18,21 +18,21 @@ class Group extends React.Component {
       return {
         [breakpoints.laptop]: {
           "> :not(:first-child)": {
-            [this.getMarginType(direction)]: spacing
-          }
+            [this.getMarginType(direction)]: spacing,
+          },
         },
         [breakpoints.mobile]: {
           "> :not(:first-child)": {
-            marginTop: spacing
+            marginTop: spacing,
           },
-          flexDirection: "column"
-        }
+          flexDirection: "column",
+        },
       };
     } else {
       return {
         "> :not(:first-child)": {
-          [this.getMarginType(direction)]: spacing
-        }
+          [this.getMarginType(direction)]: spacing,
+        },
       };
     }
   };
@@ -43,7 +43,8 @@ class Group extends React.Component {
       children,
       direction = "row",
       responsive,
-      spacing = 8
+      spacing = 8,
+      margin,
     } = this.props;
 
     return (
@@ -52,7 +53,8 @@ class Group extends React.Component {
           display: "flex",
           flexDirection: direction,
           ...this.getMarginStyles(direction, responsive, spacing),
-          ...alignment
+          ...alignment,
+          marginTop: margin || 0,
         })}
       >
         {children}

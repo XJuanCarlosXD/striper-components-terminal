@@ -11,6 +11,7 @@ import ConnectionInfo from "./ConnectionInfo/ConnectionInfo.jsx";
 import Readers from "./Forms/Readers.jsx";
 import Group from "./components/Group/Group.jsx";
 import Logs from "./Logs/Logs.jsx";
+import { Toaster, toast } from "react-hot-toast";
 
 import { css } from "emotion";
 
@@ -213,6 +214,7 @@ class App extends Component {
         discoveredReaders: [],
         reader: connectResult.reader,
       });
+      toast.success("terminal conectado");
       return connectResult;
     }
   };
@@ -223,6 +225,7 @@ class App extends Component {
     this.setState({
       reader: null,
     });
+    toast.success("terminal desconectado");
   };
 
   registerAndConnectNewReader = async (label, registrationCode, location) => {
@@ -234,31 +237,30 @@ class App extends Component {
       });
       // After registering a new reader, we can connect immediately using the reader object returned from the server.
       await this.connectToReader(reader);
-      console.log("Registered and Connected Successfully!");
+      toast.success("terminal registrado exitosamente");
     } catch (e) {
       // Suppress backend errors since they will be shown in logs
     }
   };
 
   // 3. Terminal Workflows (Once connected to a reader)
-  updateLineItems = async () => {
+  updateLineItems = async (val) => {
     // 3a. Update the reader display to show cart contents to the customer
     await this.terminal.setReaderDisplay({
       type: "cart",
       cart: {
-        line_items: [
-          {
-            description: this.state.itemDescription,
-            amount: this.state.chargeAmount,
-            quantity: 1,
-          },
-        ],
-        tax: this.state.taxAmount,
-        total: this.state.chargeAmount + this.state.taxAmount,
-        currency: this.state.currency,
+        line_items: val.products.map((product) => ({
+          description: product.description,
+          amount: product.chargeAmount,
+          quantity: product.quantity,
+        })),
+        tax: val.taxAmount,
+        total: val.totalAmount,
+        currency: val.currency,
       },
     });
-    console.log("Reader Display Updated!");
+    toast.success("Productos registrado en terminal");
+    console.log("Reader Display Updated!", { val });
     return;
   };
 
@@ -456,22 +458,6 @@ class App extends Component {
     } else {
       return (
         <>
-          <CartForm
-            workFlowDisabled={this.isWorkflowDisabled()}
-            onClickUpdateLineItems={() =>
-              this.runWorkflow("updateLineItems", this.updateLineItems)
-            }
-            itemDescription={this.state.itemDescription}
-            chargeAmount={this.state.chargeAmount}
-            taxAmount={this.state.taxAmount}
-            currency={this.state.currency}
-            onChangeCurrency={(currency) => this.updateCurrency(currency)}
-            onChangeChargeAmount={(amount) => this.updateChargeAmount(amount)}
-            onChangeTaxAmount={(amount) => this.updateTaxAmount(amount)}
-            onChangeItemDescription={(description) =>
-              this.updateItemDescription(description)
-            }
-          />
           <CommonWorkflows
             workFlowDisabled={this.isWorkflowDisabled()}
             onClickCollectCardPayments={() =>
@@ -514,7 +500,7 @@ class App extends Component {
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-direction: raw;
+
           padding: 24px;
           @media (max-width: 800px) {
             height: auto;
@@ -523,21 +509,8 @@ class App extends Component {
         `}
       >
         <Group direction="column" spacing={20}>
-          <Group direction="raw" spacing={30} responsive>
-            <Group direction="column" spacing={16} responsive>
-              {reader === null && (
-                <>
-                  <ConnectionInfo
-                    backendURL={backendURL}
-                    reader={reader}
-                    onSetBackendURL={this.onSetBackendURL}
-                    onClickDisconnect={this.disconnectReader}
-                  />
-                  {this.renderForm()}
-                </>
-              )}
-            </Group>
-            {reader !== null && (
+          <Group direction="column" spacing={16} responsive>
+            {reader === null && (
               <>
                 <ConnectionInfo
                   backendURL={backendURL}
@@ -548,9 +521,50 @@ class App extends Component {
                 {this.renderForm()}
               </>
             )}
+            {reader !== null && (
+              <>
+                <ConnectionInfo
+                  backendURL={backendURL}
+                  reader={reader}
+                  onSetBackendURL={this.onSetBackendURL}
+                  onClickDisconnect={this.disconnectReader}
+                />
+              </>
+            )}
           </Group>
+          {reader !== null && (
+            <>
+              <CartForm
+                workFlowDisabled={this.isWorkflowDisabled()}
+                onClickUpdateLineItems={(val) => {
+                  console.log("Reader Display Updated!", { val });
+                  this.runWorkflow(
+                    "updateLineItems",
+                    this.updateLineItems(val)
+                  );
+                }}
+                itemDescription={this.state.itemDescription}
+                chargeAmount={this.state.chargeAmount}
+                taxAmount={this.state.taxAmount}
+                currency={this.state.currency}
+                onChangeCurrency={(currency) => this.updateCurrency(currency)}
+                onChangeChargeAmount={(amount) =>
+                  this.updateChargeAmount(amount)
+                }
+                onChangeTaxAmount={(amount) => this.updateTaxAmount(amount)}
+                onChangeItemDescription={(description) =>
+                  this.updateItemDescription(description)
+                }
+              />
+              <Group direction="raw" spacing={16} responsive>
+                {this.renderForm()}
+              </Group>
+            </>
+          )}
+
           {reader !== null && <Logs />}
         </Group>
+        <Toaster position="bottom-right" reverseOrder={false} />
       </div>
     );
   }
