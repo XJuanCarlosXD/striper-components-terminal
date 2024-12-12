@@ -246,28 +246,39 @@ class App extends Component {
   // 3. Terminal Workflows (Once connected to a reader)
   updateLineItems = async (val) => {
     // 3a. Update the reader display to show cart contents to the customer
-    await this.terminal.setReaderDisplay({
+    const res = await this.terminal.setReaderDisplay({
       type: "cart",
       cart: {
         line_items: val.products.map((product) => ({
           description: product.description,
-          amount: product.chargeAmount,
+          amount: product.chargeAmount * 100,
           quantity: product.quantity,
         })),
         tax: val.taxAmount,
-        total: val.totalAmount,
+        total: val.totalAmount * 100,
         currency: val.currency,
       },
     });
+    console.log(res);
+    // await this.terminal.collectRefundPaymentMethod(
+    //     this.state.refundedChargeID,
+    //     this.state.refundedAmount,
+    //     "cad"
+    //   );
     toast.success("Productos registrado en terminal");
     console.log("Reader Display Updated!", { val });
     return;
   };
 
   // 3b. Collect a card present payment
-  collectCardPayment = async () => {
-    // We want to reuse the same PaymentIntent object in the case of declined charges, so we
-    // store the pending PaymentIntent's secret until the payment is complete.
+  collectCardPayment = async (updateData) => {
+    // 1. Actualizar el carrito de productos en el lector, pasando `updateData`
+    const updateCartRes = await this.updateLineItems(updateData);
+    if (updateCartRes) {
+      console.log("Carrito actualizado en la terminal:", updateCartRes);
+    }
+  
+    // 2. Continuar con el proceso de pago si no hay un PaymentIntent pendiente
     if (!this.pendingPaymentIntentSecret) {
       try {
         let paymentMethodTypes = ["card_present"];
@@ -275,66 +286,70 @@ class App extends Component {
           paymentMethodTypes.push("interac_present");
         }
         let createIntentResponse = await this.client.createPaymentIntent({
-          amount: this.state.chargeAmount + this.state.taxAmount,
-          currency: this.state.currency,
-          description: "Test Charge",
+          amount: updateData.totalAmount * 100, // Monto total en centavos
+          currency: updateData.currency, // Divisa de `updateData`
+          description: "Tienda en linea",
           paymentMethodTypes,
         });
         this.pendingPaymentIntentSecret = createIntentResponse.secret;
       } catch (e) {
-        // Suppress backend errors since they will be shown in logs
+        // Suprimir errores del backend ya que se mostrarán en los registros
+        console.log("Error al crear el PaymentIntent:", e);
         return;
       }
     }
-
+  
     const simulatorConfiguration = {
       testPaymentMethod: this.state.testPaymentMethod,
       testCardNumber: this.state.testCardNumber,
     };
-
+  
     if (this.state.simulateOnReaderTip) {
       simulatorConfiguration.tipAmount = Number(this.state.tipAmount);
     }
-
-    // Read a card from the customer
+  
+    // 3. Leer una tarjeta del cliente
     this.terminal.setSimulatorConfiguration(simulatorConfiguration);
     const paymentMethodPromise = this.terminal.collectPaymentMethod(
       this.pendingPaymentIntentSecret
     );
     this.setState({ cancelablePayment: true });
     const result = await paymentMethodPromise;
+  
     if (result.error) {
       console.log("Collect payment method failed:", result.error.message);
     } else {
-      const confirmResult = await this.terminal.processPayment(
-        result.paymentIntent
-      );
-      // At this stage, the payment can no longer be canceled because we've sent the request to the network.
+      const confirmResult = await this.terminal.processPayment(result.paymentIntent);
+      
+      // En este punto, el pago ya no puede ser cancelado porque se ha enviado la solicitud a la red.
       this.setState({ cancelablePayment: false });
+      
       if (confirmResult.error) {
         alert(`Confirm failed: ${confirmResult.error.message}`);
       } else if (confirmResult.paymentIntent) {
         if (confirmResult.paymentIntent.status !== "succeeded") {
           try {
-            // Capture the PaymentIntent from your backend client and mark the payment as complete
+            // Capturar el PaymentIntent desde el backend y marcar el pago como completo
             let captureResult = await this.client.capturePaymentIntent({
               paymentIntentId: confirmResult.paymentIntent.id,
             });
             this.pendingPaymentIntentSecret = null;
-            console.log("Payment Successful!");
+            console.log("¡Pago exitoso!");
             return captureResult;
           } catch (e) {
-            // Suppress backend errors since they will be shown in logs
+            // Suprimir errores del backend ya que se mostrarán en los registros
+            console.log("Error al capturar el PaymentIntent:", e);
             return;
           }
         } else {
           this.pendingPaymentIntentSecret = null;
-          console.log("Single-message payment successful!");
+          console.log("¡Pago exitoso de un solo mensaje!");
           return confirmResult;
         }
       }
     }
   };
+  
 
   // 3c. Cancel a pending payment.
   // Note this can only be done before calling `processPayment`.
@@ -460,9 +475,7 @@ class App extends Component {
         <>
           <CommonWorkflows
             workFlowDisabled={this.isWorkflowDisabled()}
-            onClickCollectCardPayments={() =>
-              this.runWorkflow("collectPayment", this.collectCardPayment)
-            }
+
             onClickSaveCardForFutureUse={() =>
               this.runWorkflow("saveCard", this.saveCardForFutureUse)
             }
@@ -538,10 +551,7 @@ class App extends Component {
                 workFlowDisabled={this.isWorkflowDisabled()}
                 onClickUpdateLineItems={(val) => {
                   console.log("Reader Display Updated!", { val });
-                  this.runWorkflow(
-                    "updateLineItems",
-                    this.updateLineItems(val)
-                  );
+                  this.runWorkflow("collectPayment", this.collectCardPayment(val))
                 }}
                 itemDescription={this.state.itemDescription}
                 chargeAmount={this.state.chargeAmount}

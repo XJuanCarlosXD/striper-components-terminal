@@ -12,7 +12,8 @@ services:
       - "4242:4242"
     environment:
       - NODE_ENV=production
-      - STRIPE_API_KEY=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
+      - STRIPE_API_KEY=sk_test_51PsIPgCFWnCYk0MCXXRzxfsOFZPUvTYJsjvrhh90XMwjSYhmd9iyVWimpTsPgr4qPrlEX1f4mgsz35UIKcSm5CfP00SUEBiTjr
+      #- STRIPE_API_KEY=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
       - PORT=4242
 
   # Servicio para el frontend (React)
