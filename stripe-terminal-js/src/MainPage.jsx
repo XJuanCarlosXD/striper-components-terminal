@@ -18,18 +18,18 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      status: "requires_initializing", // requires_connecting || reader_registration || workflows
-      backendURL: null,
+      status: "requires_connecting", // requires_connecting || reader_registration || workflows
+      backendURL: process.env.REACT_APP_API,
       discoveredReaders: [],
       connectionStatus: "not_connected",
       reader: null,
       readerLabel: "",
       registrationCode: "",
       cancelablePayment: false,
-      chargeAmount: 5100,
-      itemDescription: "Red t-shirt",
-      taxAmount: 100,
-      currency: "usd",
+      chargeAmount: 0,
+      itemDescription: "Producto",
+      taxAmount: 0,
+      currency: "eur",
       workFlowInProgress: null,
       discoveryWasCancelled: false,
       refundedChargeID: null,
@@ -41,6 +41,8 @@ class App extends Component {
       tipAmount: null,
       simulateOnReaderTip: false,
     };
+    this.initializeBackendClientAndTerminal();
+    this.discoverReaders();
   }
 
   isWorkflowDisabled = () =>
@@ -61,9 +63,9 @@ class App extends Component {
   };
 
   // 1. Stripe Terminal Initialization
-  initializeBackendClientAndTerminal(url) {
+  initializeBackendClientAndTerminal() {
     // 1a. Initialize Client class, which communicates with the example terminal backend
-    this.client = new Client(url);
+    this.client = new Client(process.env.REACT_APP_API);
 
     // 1b. Initialize the StripeTerminal object
     this.terminal = window.StripeTerminal.create({
@@ -402,16 +404,6 @@ class App extends Component {
     });
   };
 
-  // 4. UI Methods
-  onSetBackendURL = (url) => {
-    if (url !== null) {
-      window.localStorage.setItem("terminal.backendUrl", url);
-    } else {
-      window.localStorage.removeItem("terminal.backendUrl");
-    }
-    this.initializeBackendClientAndTerminal(url);
-    this.setState({ backendURL: url });
-  };
   updateChargeAmount = (amount) =>
     this.setState({ chargeAmount: parseInt(amount, 10) });
   updateItemDescription = (description) =>
@@ -439,7 +431,6 @@ class App extends Component {
   onChangeSimulateOnReaderTip = (simulateOnReaderTip) => {
     this.setState({ simulateOnReaderTip });
   };
-
   renderForm() {
     const {
       backendURL,
@@ -523,6 +514,7 @@ class App extends Component {
           display: flex;
           align-items: center;
           justify-content: center;
+          flex-direction: raw;
           padding: 24px;
           @media (max-width: 800px) {
             height: auto;
@@ -530,22 +522,34 @@ class App extends Component {
           }
         `}
       >
-        <Group direction="column" spacing={30}>
-          <Group direction="row" spacing={30} responsive>
+        <Group direction="column" spacing={20}>
+          <Group direction="raw" spacing={30} responsive>
             <Group direction="column" spacing={16} responsive>
-              {backendURL && (
+              {reader === null && (
+                <>
+                  <ConnectionInfo
+                    backendURL={backendURL}
+                    reader={reader}
+                    onSetBackendURL={this.onSetBackendURL}
+                    onClickDisconnect={this.disconnectReader}
+                  />
+                  {this.renderForm()}
+                </>
+              )}
+            </Group>
+            {reader !== null && (
+              <>
                 <ConnectionInfo
                   backendURL={backendURL}
                   reader={reader}
                   onSetBackendURL={this.onSetBackendURL}
                   onClickDisconnect={this.disconnectReader}
                 />
-              )}
-
-              {this.renderForm()}
-            </Group>
-            <Logs />
+                {this.renderForm()}
+              </>
+            )}
           </Group>
+          {reader !== null && <Logs />}
         </Group>
       </div>
     );

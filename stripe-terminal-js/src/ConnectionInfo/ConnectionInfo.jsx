@@ -11,7 +11,6 @@ import Text from "../components/Text/Text.jsx";
 class ConnectionInfo extends React.Component {
   onChangeBackendURL = () => {
     this.props.onClickDisconnect();
-    this.props.onSetBackendURL(null);
   };
 
   render() {
@@ -25,7 +24,7 @@ class ConnectionInfo extends React.Component {
               direction="row"
               alignment={{
                 justifyContent: "space-between",
-                alignItems: "center"
+                alignItems: "center",
               }}
             >
               <Group direction="row">
@@ -59,7 +58,7 @@ class ConnectionInfo extends React.Component {
               direction="row"
               alignment={{
                 justifyContent: "space-between",
-                alignItems: "center"
+                alignItems: "center",
               }}
             >
               <Group direction="row">

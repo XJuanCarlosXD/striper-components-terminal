@@ -11,14 +11,16 @@ import Select from "../components/Select/Select.jsx";
 
 class CartForm extends React.Component {
   static CURRENCIES = [
+    { value: "eur", label: "EUR" },
+    { value: "usd", label: "USD" },
     { value: "aud", label: "AUD" },
     { value: "cad", label: "CAD" },
     { value: "czk", label: "CZK" },
-    { value: "eur", label: "EUR" },
+
     { value: "gbp", label: "GBP" },
     { value: "nzd", label: "NZD" },
     { value: "sgd", label: "SGD" },
-    { value: "usd", label: "USD" },
+
     { value: "dkk", label: "DKK" },
     { value: "sek", label: "SEK" },
   ];

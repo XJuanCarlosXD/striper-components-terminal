@@ -106,12 +106,13 @@ app.post("/connection_token", async (req, res) => {
 
 // Crear una PaymentIntent para el pago
 app.post("/create_payment_intent", async (req, res) => {
+  const { amount, currency, description } = req.body
   try {
     const intent = await stripe.paymentIntents.create({
-      amount: req.body.amount,
-      currency: "usd",
+      amount: amount * 100,
+      currency: currency,
       payment_method_types: ["card_present"],
-      capture_method: "manual",
+      capture_method: "automatic",
     });
 
     logger.info(`PaymentIntent created with ID: ${intent.id}`);

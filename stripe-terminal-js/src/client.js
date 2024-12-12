@@ -1,6 +1,6 @@
 class Client {
   constructor(url) {
-    this.url = url;
+    this.url = process.env.REACT_APP_API_URL;
     this.createConnectionToken = this.createConnectionToken.bind(this);
     this.registerDevice = this.registerDevice.bind(this);
     this.createPaymentIntent = this.createPaymentIntent.bind(this);
